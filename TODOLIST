@@ -1,0 +1,38 @@
+Multiplayer Pong System
+
+Establish Single Player Pong Game For Entertainment
+Make The Client Server Connection Chain
+Add Socket(s)
+THINK
+THINK
+THINK
+Bubbles
+
+7/2
+goal for v1 is a 2-player pong
+finish 1-player pong CHECK
+TODO: add TODOs
+
+
+    # Menu Buttons
+    x = (screen.get_width() / 2) - 125
+    y = 250
+    p = 100
+
+    play_button = MenuButton(x, y, 150, 50, "PLAY", (0, 255, 0), (0, 0, 0))
+    customization_button = MenuButton(x, y - p, 150, 50, "CUSTOMIZATION", (255, 255, 0), (0, 0, 0))
+    quit_button = MenuButton(x, y - (p * 2), 150, 50, "QUIT", (255, 0, 0), (0, 0, 0))
+
+    play_button.draw()
+    customization_button.draw()
+    quit_button.draw()
+
+    if pg.mouse.get_pressed(3)[0]:
+        if play_button.clicked():
+            ...
+
+        if customization_button.clicked():
+            ...
+
+        if quit_button.clicked():
+            pg.quit()
