@@ -199,11 +199,6 @@ def socket_things():
                         if gs:
                             conn.send(get_game_state_bytes())
 
-                    except ValueError:
-                        pass
-
-                    except KeyError:
-                        pass
 
 
 def get_game_state() -> dict[str, Any]:
