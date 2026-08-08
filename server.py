@@ -1,5 +1,4 @@
 import random
-import re
 import socket
 import threading
 from typing import Any
@@ -41,10 +40,6 @@ PADDLE_RIGHT: paddle.Paddle = paddle.Paddle(SCREEN_WIDTH - (50 + PADDLE_WIDTH),
                                             (SCREEN_HEIGHT / 2) - (PADDLE_HEIGHT / 2),
                                             PADDLE_WIDTH, PADDLE_HEIGHT,
                                             PADDLE_SPEED, side='R')
-
-# COMMAND REGEXP
-MOVE = re.compile('M ([LR]) (-?[0-9]+)', re.IGNORECASE)
-GAME_STATE_SEND = re.compile('GS', re.IGNORECASE)
 
 s_text: pg.font.Font = pg.font.Font(None, 52)
 SCORE: list[int] = [0, 0]
@@ -162,10 +157,7 @@ def pygame_run_function():
 
 
 def socket_things():
-    """
-    Does socket stuff.
-    """
-    global MOVE, GAME_STATE_SEND, running
+    global running
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("0.0.0.0", int(sys.argv[1])))
@@ -174,31 +166,27 @@ def socket_things():
 
         with conn:
             while running:
-                data = conn.recv(1024)
+                data = conn.recv(2)
 
                 if not data:
                     break
 
-                else:
-                    try:
-                        st = data.decode("ascii")
+                if data[0] == ord('L') or data[0] == ord('R'):
+                    paddle = PADDLE_LEFT
+                    if data[0] == ord('R'):
+                        paddle = PADDLE_RIGHT
+                    amount = int.from_bytes(data[1:2], signed=True)
 
-                        m = MOVE.match(st)
-                        gs = GAME_STATE_SEND.match(st)
+                    if paddle.y > 0 and amount < 0:
+                        # move down
+                        paddle.move(0, amount)
 
-                        if m:
-                            paddle = {'L': PADDLE_LEFT, 'R': PADDLE_RIGHT}[m.group(1)]
-                            amount = m.group(2)
+                    if paddle.y + paddle.height < screen.get_height() and amount > 0:
+                        # move up
+                        paddle.move(0, amount)
 
-                            if paddle.y > 0 > int(amount):
-                                paddle.move(0, float(amount))
-
-                            elif paddle.y + paddle.height < screen.get_height() and int(amount) > -1:
-                                paddle.move(0, float(amount))
-
-                        if gs:
-                            conn.send(get_game_state_bytes())
-
+                elif data[0] == ord('G'):
+                    conn.send(get_game_state_bytes())
 
 
 def get_game_state() -> dict[str, Any]:

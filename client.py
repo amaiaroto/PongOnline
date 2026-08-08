@@ -1,4 +1,7 @@
 # Standard imports
+import sqlite3
+import sys
+import threading
 import time
 
 # Extra imports
@@ -35,7 +38,7 @@ paddle_right = lambda: (our_paddle.x + our_paddle.width, our_paddle.y, our_paddl
 
 paddle_sides = [paddle_top, paddle_bottom, paddle_right]
 
-send: str | bytes = b''
+send = bytearray(2)
 
 
 def draw_State(__json_encoded_state, /):
@@ -81,10 +84,6 @@ class section:
 
 
 # REGEXPS
-LEFT_PADDLE = re.compile("LP", re.IGNORECASE)
-RIGHT_PADDLE = re.compile("RP", re.IGNORECASE)
-BALL_POS = re.compile("B", re.I)
-GAME_STATE_RECV = re.compile("GS ([{}, \'\"a-z0-9:<>.])", re.IGNORECASE)
 
 runningx = True
 side = sys.argv[3]
@@ -127,27 +126,38 @@ def pg_thread():
         clock.tick(60)
 
 
-def socket_send_thread():
+# def socket_send_thread():
+#     global send, runningx
+#     with (socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s):
+#         s.connect((sys.argv[1], int(sys.argv[2])))
+#         s.settimeout(15.0)
+#
+#         if len(send) > 0:
+#             s.send(send)
+#             send = b""
+
+
+def socket_recv_thread():
     global send, runningx
+    gs = 'GS'.encode('ascii')
     global our_paddle, left_paddle, right_paddle, _ball, score, side, counter
     with (socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s):
         s.connect((sys.argv[1], int(sys.argv[2])))
         s.settimeout(15.0)
 
         start = time.time_ns()
-        ns_between_frames = 1 / 30 * 1e9
+        ns_between_frames = (1/30) * 1e9
 
         while runningx:
             ct = time.time_ns()
-
-            if len(send) > 0:
+            if send[1] != 0:
                 s.send(send)
-                send = b""
+                send[1] = 0
 
             if (ct - start) > ns_between_frames:
                 start = ct
 
-                s.send('GS'.encode('ascii'))
+                s.send(gs)
 
                 # start
                 try:
@@ -176,6 +186,7 @@ def socket_send_thread():
                         left_paddle = paddle.Paddle(0, 0, 0, 0, 0, side='L')
                         left_paddle.width = game_state['LPW']
                         left_paddle.height = game_state['LPH']
+
                         if side == 'L':
                             our_paddle = left_paddle
 
@@ -183,6 +194,7 @@ def socket_send_thread():
                         right_paddle = paddle.Paddle(0, 0, 0, 0, 0, side='R')
                         right_paddle.width = game_state['RPW']
                         right_paddle.height = game_state['RPH']
+
                         if side == 'R':
                             our_paddle = right_paddle
 
@@ -202,16 +214,12 @@ def socket_send_thread():
 def send_paddle_position(change, side):
     global send
 
-    send = f"M {side} {change}".encode('ascii')
-
-
-def get_game_state():
-    global send
-
-    send = "GS"
+    send[0] = ord(side)
+    send[1:2] = int.to_bytes(change, 1, signed=True)
 
 
 if __name__ == "__main__":
     print(sys.argv)
-    threading.Thread(target=socket_send_thread).start()
+    #threading.Thread(target=socket_send_thread).start()
+    threading.Thread(target=socket_recv_thread).start()
     pg_thread()
