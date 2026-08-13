@@ -31,9 +31,9 @@ PADDLE_HEIGHT: int = 200
 CLOCK: pg.time.Clock = pg.time.Clock()
 # BALL SETTINGS
 BALL_SIZE: int = 10
-BALL_SPEED: float = 0.25
+BALL_SPEED = 0.25
 BG_COLOR: tuple[int, int, int] = (0, 0, 0)
-BALL: ball.Ball = ball.Ball(BALL_SIZE, BALL_SPEED, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+BALL: ball.Ball = ball.Ball(BALL_SIZE, BALL_SPEED, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 PADDLE_LEFT: paddle.Paddle = paddle.Paddle(50, (SCREEN_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH,
                                            PADDLE_HEIGHT, PADDLE_SPEED, side='L')
 PADDLE_RIGHT: paddle.Paddle = paddle.Paddle(SCREEN_WIDTH - (50 + PADDLE_WIDTH),
@@ -155,21 +155,17 @@ def pygame_run_function():
         pg.display.flip()
         # socket_things()
 
-
-def socket_things():
+def client_processor(conn,addr):
     global running
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("0.0.0.0", int(sys.argv[1])))
-        s.listen(5)
-        conn, addr = s.accept()
-
-        with conn:
-            while running:
+    print("connection from",addr)
+    with conn:
+        conn.settimeout(0)
+        while running:
+            try:
                 data = conn.recv(2)
 
                 if not data:
-                    break
+                    continue
 
                 if data[0] == ord('L') or data[0] == ord('R'):
                     paddle = PADDLE_LEFT
@@ -177,7 +173,7 @@ def socket_things():
                         paddle = PADDLE_RIGHT
                     amount = int.from_bytes(data[1:2], signed=True)
 
-                    if paddle.y > 0 and amount < 0:
+                    if paddle.y > 0 > amount:
                         # move down
                         paddle.move(0, amount)
 
@@ -187,6 +183,20 @@ def socket_things():
 
                 elif data[0] == ord('G'):
                     conn.send(get_game_state_bytes())
+            except BaseException as e:
+                pass
+                #print("Error", e)
+
+def socket_things():
+    global running
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("0.0.0.0", int(sys.argv[1])))
+        s.listen(5)
+        while running:
+            print("listening")
+            conn, addr = s.accept()
+            socket_thread = threading.Thread(target=client_processor,args=(conn,addr))
+            socket_thread.start()
 
 
 def get_game_state() -> dict[str, Any]:

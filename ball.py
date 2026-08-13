@@ -1,19 +1,18 @@
 import math
 import random
-# from server import get_ball_pos
 import pygame as pg
 
 
 class Ball:
-    def __init__(self, size, speed, x, y, d: int = None):
+    def __init__(self, size: int, speed, x: int, y: int, /, d: int = None):
         x = int(x)
         y = int(y)
-        self.size = size
-        self.speed = speed
+        self.size: int = size
+        self.speed: int = speed
         self.x: int = x
         self.y: int = y
-        self.direction = random.choice([random.randint(0, 160)] +
-                                       [random.randint(200, 360)]) if d is None else d
+        self.direction: int = random.choice([random.randint(10, 80),random.randint(100, 170)] +
+                                       [random.randint(-80, -10),random.randint(-170, -100)]) if d is None else d
         self.fx, self.fy = x, y
         self.fs = speed
 
@@ -46,11 +45,12 @@ class Ball:
         elif self.y + self.size > screen.get_height():
             self.y = screen.get_height() - self.size
 
-    def get_rect(self, /):
+    def get_rect(self):
         return pg.Rect(self.x, self.y, self.size, self.size)
 
-    def reset(self, /):
+    def reset(self):
         self.x = self.fx
         self.y = self.fy
         self.speed = self.fs
-        self.direction = random.choice([random.randint(0, 160)] + [random.randint(200, 360)])
+        self.direction = random.choice([random.randint(10, 80),random.randint(100, 170)] +
+                                       [random.randint(-80, -10),random.randint(-170, -100)])

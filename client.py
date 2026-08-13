@@ -1,7 +1,4 @@
 # Standard imports
-import sqlite3
-import sys
-import threading
 import time
 
 # Extra imports
@@ -143,7 +140,7 @@ def socket_recv_thread():
     global our_paddle, left_paddle, right_paddle, _ball, score, side, counter
     with (socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s):
         s.connect((sys.argv[1], int(sys.argv[2])))
-        s.settimeout(15.0)
+        s.settimeout(0)
 
         start = time.time_ns()
         ns_between_frames = (1/30) * 1e9
@@ -208,7 +205,8 @@ def socket_recv_thread():
                     right_paddle.y = game_state['RPY']
 
                 except BaseException as e:
-                    print("error", e)
+                    pass
+                    #print("error", e)
 
 
 def send_paddle_position(change, side):
